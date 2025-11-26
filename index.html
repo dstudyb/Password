@@ -44,26 +44,19 @@
             max-height: none; 
         }
         
-        /* ----------------------------------
-           顶部标题和描述 - 调整为居中和只保留标题
-           ---------------------------------- */
+        /* 顶部标题 */
         .header {
-            text-align: center; /* 【修改 1a】：居中 */
+            text-align: center; 
             margin-bottom: 30px;
         }
         .header h2 {
             font-size: 2em;
             font-weight: 700;
-            margin: 0; /* 【修改 1b】：移除多余边距 */
+            margin: 0; 
             color: black;
         }
-        .header p {
-            display: none; /* 【修改 1c】：隐藏描述文本 */
-        }
 
-        /* ----------------------------------
-           密码显示区域
-           ---------------------------------- */
+        /* 密码显示区域 */
         .password-display-area {
             display: flex;
             align-items: flex-start;
@@ -122,9 +115,7 @@
             color: var(--primary-blue);
         }
 
-        /* ----------------------------------
-           复制按钮
-           ---------------------------------- */
+        /* 复制按钮 */
         .copy-btn {
             width: 100%; 
             padding: 12px;
@@ -143,9 +134,7 @@
             background-color: var(--success-green);
         }
 
-        /* ----------------------------------
-           密码长度控制
-           ---------------------------------- */
+        /* 密码长度控制 */
         .length-control {
             margin-bottom: 40px;
             text-align: center;
@@ -244,9 +233,7 @@
             z-index: 3; 
         }
         
-        /* ----------------------------------
-           字符类型选择 - 优化为单行显示
-           ---------------------------------- */
+        /* 字符类型选择 */
         .char-type-header {
             font-size: 1.1em;
             font-weight: 600;
@@ -254,10 +241,9 @@
         }
         .char-type-selection {
             display: flex;
-            /* 【修改 2a】：使其在同一行内居中对齐，并自动换行 */
             justify-content: center; 
             flex-wrap: wrap; 
-            gap: 15px; /* 【修改 2b】：添加间距 */
+            gap: 15px; 
         }
 
         .char-type-item {
@@ -266,11 +252,11 @@
             cursor: pointer;
             user-select: none;
             font-size: 1.1em;
-            margin-bottom: 5px; /* 调整底部边距，使其更紧凑 */
-            flex-basis: auto; /* 【修改 2c】：让项目宽度自适应内容，而不是固定百分比 */
-            padding: 5px 10px; /* 【修改 2d】：添加内边距使其更美观 */
-            border: 1px solid var(--border-color); /* 【修改 2e】：添加边框 */
-            border-radius: var(--radius-sm); /* 【修改 2f】：添加圆角 */
+            margin-bottom: 5px; 
+            flex-basis: auto; 
+            padding: 5px 10px; 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-sm); 
             transition: background-color 0.2s, border-color 0.2s;
         }
 
@@ -317,7 +303,7 @@
     <div class="container">
         <div class="header">
             <h2>随机密码生成器</h2>
-            </div>
+        </div>
         
         <div class="password-display-area">
             <input type="text" id="generatedPassword" readonly value="点击刷新生成密码">
@@ -362,7 +348,18 @@
 
     <script>
         // ----------------------------------------------------
-        // 核心密码生成逻辑
+        // 密码乱序函数
+        // ----------------------------------------------------
+        function shufflePassword(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array.join('');
+        }
+
+        // ----------------------------------------------------
+        // 核心密码生成逻辑 - 增强版 (确保选中字符出现)
         // ----------------------------------------------------
         function generatePassword(length, useUpper, useLower, useDigits, useSymbols) {
             const lower = "abcdefghijklmnopqrstuvwxyz";
@@ -370,31 +367,45 @@
             const digits = "0123456789";
             const symbols = "!@#$%^&*()_+~`|}{[]:;?><,./-="; 
 
-            let characters = "";
-            
-            if (useLower) characters += lower;
-            if (useUpper) characters += upper;
-            if (useDigits) characters += digits;
-            if (useSymbols) characters += symbols;
+            let availableChars = ""; // 用于填充剩余长度的所有字符
+            let mandatoryChars = []; // 必须包含的字符数组
 
-            if (characters.length === 0) {
-                // 如果所有字符类型都未选中，且长度大于 0，则提示用户并返回空字符串
+            // 1. 强制抽取每个选中类型的至少一个字符
+            if (useLower) {
+                availableChars += lower;
+                mandatoryChars.push(lower[Math.floor(Math.random() * lower.length)]);
+            }
+            if (useUpper) {
+                availableChars += upper;
+                mandatoryChars.push(upper[Math.floor(Math.random() * upper.length)]);
+            }
+            if (useDigits) {
+                availableChars += digits;
+                mandatoryChars.push(digits[Math.floor(Math.random() * digits.length)]);
+            }
+            if (useSymbols) {
+                availableChars += symbols;
+                mandatoryChars.push(symbols[Math.floor(Math.random() * symbols.length)]);
+            }
+
+            if (availableChars.length === 0) {
                 if (length > 0) { 
                     alert("请至少选择一种字符类型！");
                 }
                 return "";
             }
-            
-            // 确保生成的密码长度至少为1，即使滑块设为1
-            if (length < 1) length = 1; 
 
-            let password = "";
-            for (let i = 0; i < length; i++) {
-                const randomIndex = Math.floor(Math.random() * characters.length);
-                password += characters[randomIndex];
+            // 2. 随机填充剩余的密码长度
+            let passwordArray = mandatoryChars;
+            const remainingLength = length - mandatoryChars.length;
+
+            for (let i = 0; i < remainingLength; i++) {
+                const randomIndex = Math.floor(Math.random() * availableChars.length);
+                passwordArray.push(availableChars[randomIndex]);
             }
-
-            return password;
+            
+            // 3. 打乱数组顺序以保证随机性
+            return shufflePassword(passwordArray);
         }
 
         // ----------------------------------------------------
@@ -442,7 +453,6 @@
         const copyBtn = document.getElementById('copyBtn');
         const sliderTrack = document.querySelector('.slider-track');
 
-        // 初始化滑块轨道填充
         function updateSliderTrack() {
             const min = parseInt(passwordLengthSlider.min);
             const max = parseInt(passwordLengthSlider.max);
@@ -452,14 +462,12 @@
             sliderTrack.style.setProperty('--track-fill-width', percentage + '%');
         }
 
-        // 监听滑块变化
         passwordLengthSlider.addEventListener('input', () => {
             currentLengthDisplay.textContent = passwordLengthSlider.value;
             updateSliderTrack();
             generateAndDisplayPassword(); 
         });
 
-        // 密码长度加减按钮
         function incrementLength() {
             if (parseInt(passwordLengthSlider.value) < parseInt(passwordLengthSlider.max)) {
                 passwordLengthSlider.value = parseInt(passwordLengthSlider.value) + 1;
@@ -481,7 +489,6 @@
         window.incrementLength = incrementLength;
         window.decrementLength = decrementLength;
 
-        // 字符类型复选框的点击事件
         document.querySelectorAll('.char-type-item input[type="checkbox"]').forEach(checkbox => {
             checkbox.addEventListener('change', generateAndDisplayPassword);
         });
@@ -501,7 +508,7 @@
             passwordStrengthIndicator.textContent = '';
             passwordStrengthIndicator.className = '';
 
-            if (newPassword === "") { // 当生成密码为空时，显示提示
+            if (newPassword === "") {
                  generatedPasswordInput.value = "请选择字符类型";
                  passwordStrengthIndicator.textContent = '';
                  passwordStrengthIndicator.className = '';
@@ -515,7 +522,6 @@
                 passwordStrengthIndicator.textContent = '弱';
                 passwordStrengthIndicator.classList.add('weak');
             } else {
-                // 如果密码强度为空（例如，初始加载时），也清空显示
                 passwordStrengthIndicator.textContent = '';
                 passwordStrengthIndicator.className = '';
             }
